@@ -18,8 +18,28 @@ def image_generation(prompt):
     )
 
     image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    
+    output_path = "data/img.jpg"
+    cv.imwrite(output_path, image)
+    
+    return output_path
 
-    cv.imwrite("data/img.jpg", image)
-    cv.waitKey(0)
+def update_image(update_prompt):
+    output_path = f"data/update_img.jpg"
+    
+    client = InferenceClient(
+        provider="hf-inference",
+        api_key=os.getenv("HF_API_KEY"),
+    )
 
-    return
+    image = client.text_to_image(
+        update_prompt,
+        model="black-forest-labs/FLUX.1-schnell",
+    )
+
+    image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    
+    output_path = "data/update_img.jpg"
+    cv.imwrite(output_path, image)
+    
+    return output_path

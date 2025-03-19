@@ -1,0 +1,1 @@
+Create a prompt to generate a skeletal structure of a tshirt.
