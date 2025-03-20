@@ -21,7 +21,7 @@ def image_generation(prompt):
     
     output_path = "data/img.jpg"
     cv.imwrite(output_path, image)
-    
+    cv.imwrite("data/update_img.jpg", image)
     return output_path
 
 def update_image(update_prompt):

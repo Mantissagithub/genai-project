@@ -35,16 +35,32 @@ async def generate_base_image(request: Request):
     
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
-    sys_instruct = """Analyze the user's prompt and extract only the object they want to visualize.
-    Create a detailed prompt for generating a clean, wireframe/skeletal structure of this object.
-    Focus only on the structural elements and form - no textures, colors, or decorative elements.
-    The output should be a minimalist, engineering-style visualization showing only the essential framework.
-    Return your response as valid JSON with a single 'prompt' field containing your generated prompt.
-    Do not include any metadata or text within the image itself in the prompt.
+    sys_instruct = """
+    Analyze the user's prompt and extract the object they want to visualize. 
+    Create a detailed prompt for generating a clean, wireframe/skeletal structure of this object. 
+    Focus only on the structural elements and form of the object. Completely avoid biological elements such as bones, muscles, organs, or any human or animal anatomy under all circumstances. 
+
+    If the user requests a base object (e.g., a shirt, a table, etc.), ensure the base is simple and distinct. The base and the object must be visually separated by contrast in color or outline to maintain clarity. 
+    For example, if a shirt is requested, visualize only the shirt's structure (e.g., seams, sleeves, and neckline) without any internal or anatomical elements. 
+
+    The visualization should:
+    1. Use a clean, contrasting background (e.g., white background with dark outlines for objects).
+    2. Exclude any biological, anatomical, or human-related structures entirely.
+    3. Maintain a simple, minimalistic design with no textures, decorations, or additional elements unless explicitly specified.
+    4. Avoid blending of the base object and background, ensuring clear visual separation.
+    5. Focus on engineering-style precision and form, emphasizing only the object's essential framework.
+
+    Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. 
+    Be highly detailed, specifying all necessary features clearly and concisely, avoiding any ambiguity or assumptions. 
+    Do not include any metadata, text, or unrelated elements in the prompt.
+
+    Output format:
     {
-        "prompt":"your generated prompt"
+        'prompt': 'your generated prompt'
     }
     """
+
+
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
@@ -87,19 +103,34 @@ async def update_existing_image(request: Request):
         return {"message": f"Base image not found at {base_image_path}"}
     
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-    sys_instruct = """Analyze both the original prompt and the new update request to create a detailed instruction for transforming an existing image.
-    
-    ORIGINAL PROMPT: {previous_prompt}
-    UPDATE REQUEST: {prompt}
-    
-    Create a detailed prompt that instructs the image generation model to modify the existing image according to the update request,
-    while maintaining the essential structure established by the original prompt.
-    
-    Return your response as valid JSON with a single 'prompt' field containing your generated prompt.
-    {
-        "prompt":"your generated prompt"
-    }
-    """
+    sys_instruct = """
+Analyze both the original prompt and the new update request to create a detailed instruction for transforming an existing image.
+
+ORIGINAL PROMPT: """ + previous_prompt + """
+UPDATE REQUEST: """ + prompt + """
+
+Create a detailed prompt that instructs the image generation model to modify the existing image according to the update request, while maintaining the essential structure and context established by the original prompt.
+
+Ensure the following conditions are met:
+1. Preserve the overall structural integrity and key elements specified in the original prompt unless explicitly instructed to alter them.
+2. Avoid introducing biological elements (e.g., muscles, bones, or anatomy) under any circumstances unless explicitly mentioned in the update request.
+3. Ensure clear visibility by maintaining a contrasting background and object colors (e.g., white background with dark outlines or vice versa).
+4. Exclude textures, decorations, or additional elements unless explicitly requested.
+5. Ensure any textures generated are displayed on a plain background, and the object must appear as if floating in the air with no additional environmental context.
+6. Avoid ambiguity in describing modifications; be highly specific and clearly explain the required changes.
+7. If the update request involves adding or changing a base object (e.g., a shirt or a table), ensure it is simple, distinct, and visually separated from the main object.
+8. Avoid blending of the base object, background, or any new additions, ensuring all elements are clearly distinguishable.
+9. Focus on clean, minimalistic, and engineering-style design principles.
+
+Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. Be explicit and precise in detailing the modifications, avoiding assumptions or unnecessary complexity.
+
+Output format:
+{
+    'prompt': 'your generated prompt'
+}
+"""
+
+
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
