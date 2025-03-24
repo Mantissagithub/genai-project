@@ -1,45 +1,59 @@
 from huggingface_hub import InferenceClient
-import cv2 as cv
 import numpy as np
 import os
 from dotenv import load_dotenv
+from PIL import Image
+from io import BytesIO
+import base64
+from google import genai
+from google.genai import types
+import PIL.Image
+
+from firebase import upload_file_to_firebase
+import time
 
 load_dotenv()
 
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
 def image_generation(prompt):
-    client = InferenceClient(
-        provider="hf-inference",
-        api_key=os.getenv("HF_API_KEY"),
-    )
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-exp-image-generation",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+        response_modalities=['Text', 'Image']
+        )
+    )   
 
-    image = client.text_to_image(
-        prompt,
-        model="black-forest-labs/FLUX.1-schnell",
-    )
-
-    image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+    for part in response.candidates[0].content.parts:
+        if part.text is not None:
+            print(part.text)
+        elif part.inline_data is not None:
+            image = Image.open(BytesIO((part.inline_data.data)))
+            image.save('data/update_img.png')
+            image.save('data/img.png')
+            timestamp = int(time.time())
+            file_url = upload_file_to_firebase(f"data/img.png")
     
-    output_path = "data/img.jpg"
-    cv.imwrite(output_path, image)
-    cv.imwrite("data/update_img.jpg", image)
-    return output_path
+    return file_url
 
 def update_image(update_prompt):
-    output_path = f"data/update_img.jpg"
-    
-    client = InferenceClient(
-        provider="hf-inference",
-        api_key=os.getenv("HF_API_KEY"),
+    image = PIL.Image.open('data/img.png')
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-exp-image-generation",
+        contents=[update_prompt, image],
+        config=types.GenerateContentConfig(
+        response_modalities=['Text', 'Image']
+        )
     )
 
-    image = client.text_to_image(
-        update_prompt,
-        model="black-forest-labs/FLUX.1-schnell",
-    )
-
-    image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-    
-    output_path = "data/update_img.jpg"
-    cv.imwrite(output_path, image)
-    
-    return output_path
+    for part in response.candidates[0].content.parts:
+        if part.text is not None:
+            print(part.text)
+        elif part.inline_data is not None:
+            image = Image.open(BytesIO(part.inline_data.data))
+            image.save("data/update_img.png")
+            timestamp = int(time.time())
+            file_url = upload_file_to_firebase(f"data/update_img.png")  
+    return file_url

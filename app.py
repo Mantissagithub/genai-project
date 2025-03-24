@@ -5,7 +5,6 @@ from transformers import pipeline
 import uvicorn
 import json
 from jinja2 import Template
-import google.genai as genai # type: ignore
 import logging
 from google.genai import types # type: ignore
 from google import genai
@@ -13,10 +12,22 @@ from dotenv import load_dotenv
 import os
 
 from image import image_generation,update_image
+from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
+
 
 app = FastAPI()
 
+# Configure CORS for the application
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["Content-Type"],
+    max_age=600, 
+)
 
 @app.get("/")
 def home():
@@ -25,7 +36,8 @@ def home():
 @app.post("/image-generation-base")
 async def generate_base_image(request: Request):
     data = await request.json()
-    prompt = data.get("prompt", None)
+    print(data)
+    prompt = data.get("initialPrompt", "")
 
     with open("prompt.txt","w") as file:
         file.write(prompt)
@@ -80,15 +92,15 @@ async def generate_base_image(request: Request):
         "message": "Image generated successfully",
         "original_prompt": prompt,
         "refined_prompt": refined_prompt,
-        "image_path": image_path
+        "imageUrl": image_path
     }
 
 
 @app.post("/image-generation-update")
 async def update_existing_image(request: Request):
     data = await request.json()
-    prompt = data.get("prompt", None)
-    base_image_path = "data/img.jpg"  
+    prompt = data.get("customizingPrompt", None)
+    base_image_path = "data/img.png"  
 
 
     if not prompt:
@@ -104,31 +116,31 @@ async def update_existing_image(request: Request):
     
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     sys_instruct = """
-Analyze both the original prompt and the new update request to create a detailed instruction for transforming an existing image.
+    Analyze both the original prompt and the new update request to create a detailed instruction for transforming an existing image.
 
-ORIGINAL PROMPT: """ + previous_prompt + """
-UPDATE REQUEST: """ + prompt + """
+    ORIGINAL PROMPT: """ + previous_prompt + """
+    UPDATE REQUEST: """ + prompt + """
 
-Create a detailed prompt that instructs the image generation model to modify the existing image according to the update request, while maintaining the essential structure and context established by the original prompt.
+    Create a detailed prompt that instructs the image generation model to modify the existing image according to the update request, while maintaining the essential structure and context established by the original prompt.
 
-Ensure the following conditions are met:
-1. Preserve the overall structural integrity and key elements specified in the original prompt unless explicitly instructed to alter them.
-2. Avoid introducing biological elements (e.g., muscles, bones, or anatomy) under any circumstances unless explicitly mentioned in the update request.
-3. Ensure clear visibility by maintaining a contrasting background and object colors (e.g., white background with dark outlines or vice versa).
-4. Exclude textures, decorations, or additional elements unless explicitly requested.
-5. Ensure any textures generated are displayed on a plain background, and the object must appear as if floating in the air with no additional environmental context.
-6. Avoid ambiguity in describing modifications; be highly specific and clearly explain the required changes.
-7. If the update request involves adding or changing a base object (e.g., a shirt or a table), ensure it is simple, distinct, and visually separated from the main object.
-8. Avoid blending of the base object, background, or any new additions, ensuring all elements are clearly distinguishable.
-9. Focus on clean, minimalistic, and engineering-style design principles.
+    Ensure the following conditions are met:
+    1. Preserve the overall structural integrity and key elements specified in the original prompt unless explicitly instructed to alter them.
+    2. Avoid introducing biological elements (e.g., muscles, bones, or anatomy) under any circumstances unless explicitly mentioned in the update request.
+    3. Ensure clear visibility by maintaining a contrasting background and object colors (e.g., white background with dark outlines or vice versa).
+    4. Exclude textures, decorations, or additional elements unless explicitly requested.
+    5. Ensure any textures generated are displayed on a plain background, and the object must appear as if floating in the air with no additional environmental context.
+    6. Avoid ambiguity in describing modifications; be highly specific and clearly explain the required changes.
+    7. If the update request involves adding or changing a base object (e.g., a shirt or a table), ensure it is simple, distinct, and visually separated from the main object.
+    8. Avoid blending of the base object, background, or any new additions, ensuring all elements are clearly distinguishable.
+    9. Focus on clean, minimalistic, and engineering-style design principles.
 
-Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. Be explicit and precise in detailing the modifications, avoiding assumptions or unnecessary complexity.
+    Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. Be explicit and precise in detailing the modifications, avoiding assumptions or unnecessary complexity.
 
-Output format:
-{
-    'prompt': 'your generated prompt'
-}
-"""
+    Output format:
+    {
+        'prompt': 'your generated prompt'
+    }
+    """
 
 
 
@@ -143,7 +155,6 @@ Output format:
     refined_prompt = json_response["prompt"]
     print("Gemini Response for update: ", refined_prompt)
     
-
     updated_image_path = update_image(refined_prompt)
     
     return {
@@ -151,7 +162,7 @@ Output format:
         "original_prompt": prompt,
         "refined_prompt": refined_prompt,
         "base_image_path": base_image_path,
-        "updated_image_path": updated_image_path
+        "imageUrl": updated_image_path
     }
 
 if __name__ == "__main__":
