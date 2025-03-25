@@ -16,36 +16,34 @@ load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+
 def image_generation(prompt):
     response = client.models.generate_content(
         model="gemini-2.0-flash-exp-image-generation",
         contents=prompt,
-        config=types.GenerateContentConfig(
-        response_modalities=['Text', 'Image']
-        )
-    )   
+        config=types.GenerateContentConfig(response_modalities=["Text", "Image"]),
+    )
 
     for part in response.candidates[0].content.parts:
         if part.text is not None:
             print(part.text)
         elif part.inline_data is not None:
             image = Image.open(BytesIO((part.inline_data.data)))
-            image.save('data/update_img.png')
-            image.save('data/img.png')
+            image.save("Website/public/update_img.png")
+            image.save("Website/public/img.png")
             timestamp = int(time.time())
-            file_url = upload_file_to_firebase(f"data/img.png")
-    
+            file_url = upload_file_to_firebase(f"Website/public/img.png")
+
     return file_url
 
+
 def update_image(update_prompt):
-    image = PIL.Image.open('data/img.png')
+    image = PIL.Image.open("Website/public/update_img.png")
 
     response = client.models.generate_content(
         model="gemini-2.0-flash-exp-image-generation",
         contents=[update_prompt, image],
-        config=types.GenerateContentConfig(
-        response_modalities=['Text', 'Image']
-        )
+        config=types.GenerateContentConfig(response_modalities=["Text", "Image"]),
     )
 
     for part in response.candidates[0].content.parts:
@@ -53,7 +51,7 @@ def update_image(update_prompt):
             print(part.text)
         elif part.inline_data is not None:
             image = Image.open(BytesIO(part.inline_data.data))
-            image.save("data/update_img.png")
+            image.save("Website/public/update_img.png")
             timestamp = int(time.time())
-            file_url = upload_file_to_firebase(f"data/update_img.png")  
+            file_url = upload_file_to_firebase(f"Website/public/update_img.png")
     return file_url

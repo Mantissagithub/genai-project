@@ -36,7 +36,7 @@ function App() {
 
       const data = await response.json();
       //image insertion plave - kb
-      setImageUrl(data.imageUrl || "/api/placeholder/400/320");
+      setImageUrl("img.png" || "/api/placeholder/400/320");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -93,10 +93,7 @@ function App() {
 
                   const data = await response.json();
                   console.log(data);
-                  setImageUrl(
-                    "/home/harish/code/genai-project/data/img.png" ||
-                      "/api/placeholder/400/320"
-                  );
+                  setImageUrl("update_img.png" || "/api/placeholder/400/320");
                 } catch (err) {
                   setError(err.message);
                 } finally {
@@ -152,10 +149,7 @@ function App() {
 
                   const data = await response.json();
                   console.log(data);
-                  setImageUrl(
-                    "/home/harish/code/genai-project/data/update_img.png" ||
-                      "/api/placeholder/400/320"
-                  );
+                  setImageUrl("update_img.png" || "/api/placeholder/400/320");
                 } catch (err) {
                   setError(err.message);
                 } finally {
@@ -188,7 +182,7 @@ function App() {
               <div className="error-message">{error}</div>
             ) : imageUrl ? (
               <img
-                src="/home/harish/code/genai-project/data/update_img.png"
+                src="update_img.png"
                 alt="Generated content"
                 className="generated-image"
               />
