@@ -54,7 +54,7 @@ async def generate_base_image(request: Request):
     sys_instruct = """
     Analyze the user's prompt and extract the object they want to visualize. 
     Create a detailed prompt for generating a clean, wireframe/skeletal structure of this object. 
-    Focus only on the structural elements and form of the object. Completely avoid biological elements such as bones, muscles, organs, or any human or animal anatomy under all circumstances. 
+    Focus only on the structural elements,form and mentioned color of the object. Completely avoid biological elements such as bones, muscles, organs, or any human or animal anatomy under all circumstances. 
 
     If the user requests a base object (e.g., a shirt, a table, etc.), ensure the base is simple and distinct. The base and the object must be visually separated by contrast in color or outline to maintain clarity. 
     For example, if a shirt is requested, visualize only the shirt's structure (e.g., seams, sleeves, and neckline) without any internal or anatomical elements. 
@@ -135,9 +135,10 @@ async def update_existing_image(request: Request):
     7. If the update request involves adding or changing a base object (e.g., a shirt or a table), ensure it is simple, distinct, and visually separated from the main object.
     8. Avoid blending of the base object, background, or any new additions, ensuring all elements are clearly distinguishable.
     9. Focus on clean, minimalistic, and engineering-style design principles.
-
+    10. if user asked for changes in collar only make changes on collar not anything
     Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. Be explicit and precise in detailing the modifications, avoiding assumptions or unnecessary complexity.
 
+    
     Output format:
     {
         'prompt': 'your generated prompt'
