@@ -49,37 +49,32 @@ async def generate_base_image(request: Request):
     if not prompt:
         return {"message": "Failed to get prompt"}
 
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"),)
 
     sys_instruct = """
-    Analyze the user's prompt and extract the object they want to visualize. 
-    Create a detailed prompt for generating a clean, wireframe/skeletal structure of this object. 
-    Focus only on the structural elements,form and mentioned color of the object. Completely avoid biological elements such as bones, muscles, organs, or any human or animal anatomy under all circumstances. 
+Analyze the user's prompt to identify the fashion-related object they want to visualize, ensuring accurate extraction of the item's structure, form, and details. Maintain a sharp focus on external design elements while applying the specified color to the garment's surface.  
 
-    If the user requests a base object (e.g., a shirt, a table, etc.), ensure the base is simple and distinct. The base and the object must be visually separated by contrast in color or outline to maintain clarity. 
-    For example, if a shirt is requested, visualize only the shirt's structure (e.g., seams, sleeves, and neckline) without any internal or anatomical elements. 
+Key Considerations:  
+1. Color Consistency: Apply the specified color uniformly to the item's surface, including fabric, material, and design elements. Avoid inconsistencies in shade or tone.  
+2. Strictly External Features: Exclude any internal anatomical elements or references. The output should strictly represent the garment’s external structure, including seams, sleeves, collars, patterns, and textures.  
+3. Structural Emphasis: Highlight critical fashion design elements such as stitching, edges, folds, fabric textures, pleats, buttons, zippers, or other relevant details that contribute to the item's visual identity.  
+4. Clean White Background: Ensure a pure white background for optimal contrast and visibility, making the item’s shape and details stand out.  
+5. Clear & Sharp Design: Maintain high visual distinction between the garment’s color, wireframe elements (if any), and the background. Avoid any blending or loss of detail.  
+6. Default View: If the prompt does not specify multiple perspectives, default to a clear front view of the fashion item. If both front and back views are required, explicitly generate them.  
+7. Return Format: The response must be structured as a Python dictionary containing a single key, 'prompt', with the optimized visualization prompt as its value.  
 
-    The visualization should:
-    1. Use a clean, contrasting background (e.g., white background with dark outlines for objects).
-    2. Exclude any biological, anatomical, or human-related structures entirely.
-    3. Maintain a simple, minimalistic design with no textures, decorations, or additional elements unless explicitly specified.
-    4. Avoid blending of the base object and background, ensuring clear visual separation.
-    5. Focus on engineering-style precision and form, emphasizing only the object's essential framework.
+Output Format:  
+python
+{
+    'prompt': 'your optimized fashion visualization prompt'
+}
+"""
 
-    Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. 
-    Be highly detailed, specifying all necessary features clearly and concisely, avoiding any ambiguity or assumptions. 
-    Do not include any metadata, text, or unrelated elements in the prompt.
-
-    Output format:
-    {
-        'prompt': 'your generated prompt'
-    }
-    """
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
-            system_instruction=sys_instruct, response_mime_type="application/json"
+            system_instruction=sys_instruct, response_mime_type="application/json",temperature=0.8
         ),
         contents=prompt,
     )
@@ -118,32 +113,61 @@ async def update_existing_image(request: Request):
 
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     sys_instruct = """
-    Using the provided input image, identify and mask the area relevant to the described changes based on the prompt. Apply inpainting techniques exclusively to the automatically masked region, ensuring seamless blending with the surrounding image. Do not create a new image from scratch or alter unmasked areas. Maintain the original style, lighting, and context in the modified output. The changes should be precise and aligned with the specific instruction in the prompt
-    
-    prompt: {prompt} 
-    
+Analyze the provided image and the user’s modification request to identify and mask only the exact region that requires changes. Apply inpainting exclusively to the masked area, ensuring a precise, seamless blend with the rest of the image while maintaining the original style, lighting, texture, and context.
 
-    Create a detailed prompt that instructs the image generation model to modify the existing image according to the update request, while maintaining the essential structure and context established by the original prompt.
+ Key Considerations  
 
-    Ensure the following conditions are met:
-    1. Preserve the overall structural integrity and key elements specified in the original prompt unless explicitly instructed to alter them.
-    2. Avoid introducing biological elements (e.g., muscles, bones, or anatomy) under any circumstances unless explicitly mentioned in the update request.
-    3. Ensure clear visibility by maintaining a contrasting background and object colors (e.g., white background with dark outlines or vice versa).
-    4. Exclude textures, decorations, or additional elements unless explicitly requested.
-    5. Ensure any textures generated are displayed on a plain background, and the object must appear as if floating in the air with no additional environmental context.
-    6. Avoid ambiguity in describing modifications; be highly specific and clearly explain the required changes.
-    7. If the update request involves adding or changing a base object (e.g., a shirt or a table), ensure it is simple, distinct, and visually separated from the main object.
-    8. Avoid blending of the base object, background, or any new additions, ensuring all elements are clearly distinguishable.
-    9. Focus on clean, minimalistic, and engineering-style design principles.
-    10. if user asked for changes in collar only make changes on collar not anything
-    Return the response as a Python dictionary with a single 'prompt' key containing your generated prompt. Be explicit and precise in detailing the modifications, avoiding assumptions or unnecessary complexity.
+ 1. Strictly Targeted Modifications  
+- Modify only the area explicitly described in the prompt.  
+- If the request is for a specific part (e.g., left sleeve, right collar, bottom hem), ensure no modifications extend beyond the specified section.  
+- Prevent unintended changes to surrounding regions, including symmetrical or connected areas unless explicitly requested.  
 
-    
-    Output format:
-    {
-        'prompt': 'your generated prompt'
-    }
-    """
+ 2. Absolute Preservation of Structure  
+- Maintain the original proportions, shape, and alignment unless the request explicitly requires structural modifications.  
+- Ensure no distortion, stretching, or unintended design alterations occur in unmodified areas.  
+- The modified section must blend naturally with the unaltered parts of the image.  
+
+ 3. No Unintended Symmetry Adjustments  
+- If a change is requested for one side (e.g., left sleeve, right pocket), ensure that only that side is modified.  
+- Do not automatically mirror or extend changes to the other side unless explicitly mentioned.  
+- Changes to elements near symmetrical regions (e.g., collars, cuffs) must be precisely localized without affecting their mirrored counterpart.  
+
+ 4. Exclusion of Biological Features  
+- Avoid introducing or modifying anatomical elements (e.g., muscles, bones, body shape) unless explicitly requested.  
+- Ensure that the focus remains on garment or object modifications, not the underlying human structure.  
+
+ 5. Clear Boundaries & No Background Spillover  
+- Use precise edge detection and masking to ensure changes are confined to the intended region.  
+- Do not modify the background or introduce color bleed beyond the object being edited.  
+- Keep modifications sharp, clean, and clearly distinguishable from unmodified areas.  
+
+ 6. No Overlapping or Unintended Blending  
+- Maintain clear separation between:  
+  - The modified area and unmodified sections.  
+  - The background and the object (no fading, no blending outside the specified edit region).  
+- If replacing an element (e.g., changing a button or pattern), ensure that the replacement is well-integrated but does not extend into unrelated areas.  
+
+ 7. No Texture or Additional Elements Unless Specified  
+- Avoid generating new textures, decorations, or patterns unless the request explicitly requires them.  
+- If a texture is necessary, it must appear well-defined and contained within the modified section.  
+
+ 8. No Assumptions – Follow Explicit Instructions  
+- Do not make assumptions about what the user wants beyond what is explicitly stated in the request.  
+- Ensure highly specific and localized modifications without unnecessary complexity.  
+
+ 9. Engineering-Style, Minimalistic Precision  
+- Maintain precision, structure, and simplicity in modifications.  
+- Avoid unnecessary artistic interpretations or design embellishments that deviate from the intended edit.  
+
+ 10. Output Format  
+- Return the modification request as a Python dictionary with a single key, `'prompt'`, containing a detailed and explicit instruction for the required modification.  
+
+ Output Format Example:  
+{
+    'prompt': 'your optimized modification prompt'
+}
+"""
+
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",

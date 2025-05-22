@@ -1,0 +1,11 @@
+Zone,Container ID,Width(cm),Depth(cm),Height(height)
+Crew Quarters,contA,100,85,200
+Airlock,contB,50,85,200
+Laboratory,contC,200,85,200
+Storage Bay,contD,150,90,210
+Command Center,contE,180,95,220
+Medical Bay,contF,120,85,200
+Engineering,contG,250,100,230
+Observation Deck,contH,170,90,215
+Hydroponics,contI,130,85,205
+Docking Bay,contJ,300,110,240   

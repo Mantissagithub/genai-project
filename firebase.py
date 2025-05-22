@@ -39,3 +39,5 @@ def upload_file_to_firebase(local_file_path, firebase_path=None):
     except Exception as e:
         print(f"Error uploading file to Firebase: {e}")
         return None
+    
+print(upload_file_to_firebase("containerData-f.csv"))

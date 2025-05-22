@@ -111,20 +111,20 @@ def show_masks(
         plt.show()
 
 
-image = Image.open("notebooks/images/truck.jpg")
+image = Image.open("notebooks/images/tshirt.jpg")
 image = np.array(image.convert("RGB"))
 
 
-# plt.figure(figsize=(10, 10))
-# plt.imshow(image)
-# plt.axis("on")
-# plt.show()
+plt.figure(figsize=(10, 10))
+plt.imshow(image)
+plt.axis("on")
+plt.show()
 
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
-sam2_checkpoint = "checkpoints/sam2.1_hiera_large.pt"
-model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
+sam2_checkpoint = "checkpoints/sam2.1_hiera_small.pt"
+model_cfg = "configs/sam2.1/sam2.1_hiera_s.yaml"
 
 sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device)
 
@@ -134,13 +134,13 @@ predictor = SAM2ImagePredictor(sam2_model)
 predictor.set_image(image)
 
 
-input_point = np.array([[800, 400]])
+input_point = np.array([[75, 200]])
 input_label = np.array([1])
-# plt.figure(figsize=(10, 10))
-# plt.imshow(image)
-# show_points(input_point, input_label, plt.gca())
-# plt.axis("on")
-# plt.show()
+plt.figure(figsize=(10, 10))
+plt.imshow(image)
+show_points(input_point, input_label, plt.gca())
+plt.axis("on")
+plt.show()
 
 print(
     predictor._features["image_embed"].shape,
@@ -157,14 +157,14 @@ scores = scores[sorted_ind]
 logits = logits[sorted_ind]
 print(masks.shape)
 
-# show_masks(
-#     image,
-#     masks,
-#     scores,
-#     point_coords=input_point,
-#     input_labels=input_label,
-#     borders=True,
-# )
+show_masks(
+    image,
+    masks,
+    scores,
+    point_coords=input_point,
+    input_labels=input_label,
+    borders=True,
+)
 input_point = np.array([[500, 375]])
 input_label = np.array([1])
 
